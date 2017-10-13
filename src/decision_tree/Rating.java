@@ -16,4 +16,8 @@ public class Rating {
 	public int getUserID(){
 		return userID;
 	}
+	
+	public int getRate(){
+		return rating;
+	}
 }

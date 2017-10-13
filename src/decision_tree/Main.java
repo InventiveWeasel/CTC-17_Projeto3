@@ -4,20 +4,35 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Main {
+	final static int N_ATTR = 4;
+	
+	//Atributos
+	final static int GENDER = 0;
+	final static int AGE = 1;
+	final static int OCCUPATION = 2;
+	final static int STARS = 3;
 	
 	public static void main(String args[]){
 		HashMap<Integer, Movie> movies = new HashMap<Integer, Movie>();
 		HashMap<Integer, User> users = new HashMap<Integer, User>();
-		readData(movies, users);
+		ArrayList<Integer> moviesID =  new ArrayList<Integer>();
+		
+		int ratingNum = readData(movies, users, moviesID);
+		ArrayList<int[]>examples = generateExampleSet(movies,users, moviesID);
+		
+		Tree decTree = new Tree(examples);
+		decTree.build();
 		int a = 2;
 	}
 
-	private static void readData(HashMap<Integer, Movie> movies, 
-			HashMap<Integer, User> users){
+	private static int readData(HashMap<Integer, Movie> movies, 
+			HashMap<Integer, User> users,
+			ArrayList<Integer> moviesID){
 		String moviesFile = "C:\\Users\\Ana Cuder\\workspace\\CTC17-Projeto3\\movies.dat";
 		String ratingsFile = "C:\\Users\\Ana Cuder\\workspace\\CTC17-Projeto3\\ratings.dat";
 		String usersFile = "C:\\Users\\Ana Cuder\\workspace\\CTC17-Projeto3\\users.dat";
@@ -37,6 +52,7 @@ public class Main {
                 for(int i=0; i < genreData.length; i++)
                 	aux.addGenre(genreData[i]);
                 movies.put(aux.getID(), aux);
+                moviesID.add(Integer.parseInt(movieData[0]));
             }
             
         } catch (FileNotFoundException e) {
@@ -54,12 +70,14 @@ public class Main {
         }
         
         //Lendo Ratings
+        int ratingNum = 0;
         try {
             br = new BufferedReader(new FileReader(ratingsFile));
             while ((line = br.readLine()) != null) {
                 ratingData = line.split(datSplitBy); 
                 Rating aux = new Rating(Integer.parseInt(ratingData[0]), Integer.parseInt(ratingData[1]), Integer.parseInt(ratingData[2]));
                 movies.get(aux.getMovieID()).addRating(aux);
+                ratingNum++;
             }
 
         } catch (FileNotFoundException e) {
@@ -81,7 +99,11 @@ public class Main {
             br = new BufferedReader(new FileReader(usersFile));
             while ((line = br.readLine()) != null) {
                 userData = line.split(datSplitBy); 
-                User aux = new User(Integer.parseInt(userData[0]), userData[1],userData[2],userData[3], userData[4]);
+                User aux = new User(Integer.parseInt(userData[0]), //user ID
+                		userData[1], //Genero
+                		Integer.parseInt(userData[2]), //Idade
+                		Integer.parseInt(userData[3]), //Ocupacao
+                		userData[4]);//CEP
                 users.put(aux.getID(), aux);
             }
 
@@ -98,7 +120,38 @@ public class Main {
                 }
             }
         }
-        
+        return ratingNum;
+	}
+	
+	private static ArrayList<int[]> generateExampleSet(HashMap<Integer, Movie> movies, 
+			HashMap<Integer, User> users,
+			ArrayList<Integer> moviesID){
+		
+		ArrayList<Rating> allMovieRatings;
+		int mid; //ID do filme
+		int uid; //ID do usuario
+		Rating auxRate;
+		int userRate;
+		User auxUser;
+		
+		ArrayList<int[]> examples = new ArrayList<int[]>();
+		for(int i = 0; i < moviesID.size(); i++){
+			mid = moviesID.get(i);
+			allMovieRatings = movies.get(mid).getAllRatings();
+			for(int j = 0; j < allMovieRatings.size(); j++){
+				auxRate = allMovieRatings.get(j);
+				uid = auxRate.getUserID();
+				userRate = auxRate.getRate();
+				auxUser = users.get(uid);
+				int[] example = new int[N_ATTR];
+				example[GENDER] = auxUser.getGender();
+				example[OCCUPATION] = auxUser.getOccupation();
+				example[AGE] = auxUser.getAge();
+				example[STARS] = userRate;
+				examples.add(example);
+			}
+		}
+		return examples;
 	}
 }
 
