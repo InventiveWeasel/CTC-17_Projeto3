@@ -16,15 +16,17 @@ public class Main {
 	final static int AGE = 1;
 	final static int OCCUPATION = 2;
 	final static int STARS = 3;
+	final static int TARGET = 4;
 	
 	public static void main(String args[]){
 		HashMap<Integer, Movie> movies = new HashMap<Integer, Movie>();
 		HashMap<Integer, User> users = new HashMap<Integer, User>();
+		//Lista de ID's de filmes para ser iterada
 		ArrayList<Integer> moviesID =  new ArrayList<Integer>();
 		
 		int ratingNum = readData(movies, users, moviesID);
 		ArrayList<int[]>examples = generateExampleSet(movies,users, moviesID);
-		
+		//int[] target = generateTargetSet(movies, moviesID);		
 		Tree decTree = new Tree(examples);
 		decTree.build();
 		int a = 2;
@@ -146,12 +148,29 @@ public class Main {
 				int[] example = new int[N_ATTR];
 				example[GENDER] = auxUser.getGender();
 				example[OCCUPATION] = auxUser.getOccupation();
-				example[AGE] = auxUser.getAge();
+				//Para que o vetor torne-se continuo, divide-se por 8 as idades
+				int aux = auxUser.getAge()/8;
+				if(aux == 0)
+					aux = 1;
+				example[AGE] = aux;
 				example[STARS] = userRate;
 				examples.add(example);
 			}
 		}
 		return examples;
+	}
+	
+	//Contabiliza o numero de ocorrencia de filmes de 1 estrela, 2, ... , 5 estrelas
+	private static int[] generateTargetSet(HashMap<Integer, Movie> movies,
+									ArrayList<Integer> moviesID){
+		//6 posicoes pois a 0 nao sera usada
+		int[] target = new int[STARS+1];
+		int mid;
+		for(int i = 0; i < moviesID.size(); i++){
+			mid = moviesID.get(i);
+			target[movies.get(mid).getStars()]++;
+		}
+		return target;
 	}
 }
 
