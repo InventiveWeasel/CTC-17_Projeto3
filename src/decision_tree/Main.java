@@ -9,32 +9,36 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Main {
-	final static int N_ATTR = 4;
+	final static int N_ATTR = 5;
 	
 	//Atributos
 	final static int GENDER = 0;
 	final static int AGE = 1;
 	final static int OCCUPATION = 2;
-	final static int STARS = 3;
-	final static int TARGET = 4;
+	final static int GENRE = 3;
+	final static int STARS = 4;
+	final static int TARGET = 5;
 	
 	public static void main(String args[]){
 		HashMap<Integer, Movie> movies = new HashMap<Integer, Movie>();
 		HashMap<Integer, User> users = new HashMap<Integer, User>();
 		//Lista de ID's de filmes para ser iterada
 		ArrayList<Integer> moviesID =  new ArrayList<Integer>();
+		//Lista com os generos
+		HashMap<String, Integer> genres = new HashMap<String, Integer>();
 		
-		int ratingNum = readData(movies, users, moviesID);
-		ArrayList<int[]>examples = generateExampleSet(movies,users, moviesID);
+		int ratingNum = readData(movies, users, moviesID, genres);
+		ArrayList<int[]>examples = generateExampleSet(movies,users, moviesID, genres);
 		//int[] target = generateTargetSet(movies, moviesID);		
-		Tree decTree = new Tree(examples);
+		Tree decTree = new Tree(examples,genres);
 		decTree.build();
 		int a = 2;
 	}
 
 	private static int readData(HashMap<Integer, Movie> movies, 
 			HashMap<Integer, User> users,
-			ArrayList<Integer> moviesID){
+			ArrayList<Integer> moviesID,
+			HashMap<String, Integer> genres){
 		String moviesFile = "C:\\Users\\Ana Cuder\\workspace\\CTC17-Projeto3\\movies.dat";
 		String ratingsFile = "C:\\Users\\Ana Cuder\\workspace\\CTC17-Projeto3\\ratings.dat";
 		String usersFile = "C:\\Users\\Ana Cuder\\workspace\\CTC17-Projeto3\\users.dat";
@@ -47,12 +51,18 @@ public class Main {
         //Lendo filmes
         try {
             br = new BufferedReader(new FileReader(moviesFile));
+            int genreCounter = 0;
             while ((line = br.readLine()) != null) {
                 movieData = line.split(datSplitBy);
-                genreData = movieData[2].split(genreSplitBy); 
+                //genreData = movieData[2].split(genreSplitBy); 
                 Movie aux = new Movie(Integer.parseInt(movieData[0]), movieData[1]);
-                for(int i=0; i < genreData.length; i++)
-                	aux.addGenre(genreData[i]);
+                //for(int i=0; i < genreData.length; i++)
+                //	aux.addGenre(genreData[i]);
+                aux.addGenre(movieData[2]);
+                if(!genres.containsKey(movieData[2])){
+                	genres.put(movieData[2], genreCounter);
+                	genreCounter++;
+                }
                 movies.put(aux.getID(), aux);
                 moviesID.add(Integer.parseInt(movieData[0]));
             }
@@ -127,7 +137,8 @@ public class Main {
 	
 	private static ArrayList<int[]> generateExampleSet(HashMap<Integer, Movie> movies, 
 			HashMap<Integer, User> users,
-			ArrayList<Integer> moviesID){
+			ArrayList<Integer> moviesID,
+			HashMap<String, Integer> genres){
 		
 		ArrayList<Rating> allMovieRatings;
 		int mid; //ID do filme
@@ -135,11 +146,13 @@ public class Main {
 		Rating auxRate;
 		int userRate;
 		User auxUser;
+		Movie auxMovie;
 		
 		ArrayList<int[]> examples = new ArrayList<int[]>();
 		for(int i = 0; i < moviesID.size(); i++){
 			mid = moviesID.get(i);
-			allMovieRatings = movies.get(mid).getAllRatings();
+			auxMovie = movies.get(mid);
+			allMovieRatings = auxMovie.getAllRatings();
 			for(int j = 0; j < allMovieRatings.size(); j++){
 				auxRate = allMovieRatings.get(j);
 				uid = auxRate.getUserID();
@@ -153,6 +166,7 @@ public class Main {
 				if(aux == 0)
 					aux = 1;
 				example[AGE] = aux;
+				example[GENRE] = genres.get(auxMovie.getGenre());
 				example[STARS] = userRate;
 				examples.add(example);
 			}

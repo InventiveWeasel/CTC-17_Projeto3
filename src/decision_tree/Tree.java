@@ -1,17 +1,19 @@
 package decision_tree;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Tree {
-	final static int N_ATTR = 4;
-	final static int COUNTER_SIZE = 30;
+	final static int N_ATTR = 5;
+	final static int COUNTER_SIZE = 305;
 	
 	//Atributos
 	final static int GENDER = 0;
 	final static int AGE = 1;
 	final static int OCCUPATION = 2;
-	final static int STARS = 3;
-	final static int TARGET = 4;
+	final static int GENRE = 3;
+	final static int STARS = 4;
+	final static int TARGET = 5;
 	
 	//Quantidades de selecoes diferentes para cada tipo de atributo dentro dos contadores
 	final static int GENDER_END = 2;
@@ -27,15 +29,16 @@ public class Tree {
 	
 	
 	private ArrayList<int[]>examples;
-	ArrayList<int[]> counters;
-	int[] iniIndex, endIndex, target;
+	private ArrayList<int[]> counters;
+	private int[] iniIndex, endIndex, target;
+	private HashMap<String, Integer> genres;
 	
-	public Tree(ArrayList<int[]> examples){
+	public Tree(ArrayList<int[]> examples, HashMap<String, Integer> genres){
 		this.examples = examples;
 		counters = accountExamples();
-		iniIndex = new int[] {GENDER_INI, AGE_INI, OCCUPATION_INI, STARS_INI, TARGET_INI};
-		endIndex = new int[] {GENDER_END, AGE_END, OCCUPATION_END, STARS_END, TARGET_END};
-		//this.target = target;
+		iniIndex = new int[] {GENDER_INI, AGE_INI, OCCUPATION_INI, 0 , STARS_INI, TARGET_INI};
+		endIndex = new int[] {GENDER_END, AGE_END, OCCUPATION_END, genres.size()-1 ,STARS_END, TARGET_END};
+		this.genres = genres;
 	}
 	
 	public void build(){
@@ -68,6 +71,10 @@ public class Tree {
 			//Emprego
 			counter = counters.get(OCCUPATION);
 			counter[example[OCCUPATION]]++;
+			
+			//Genero
+			counter = counters.get(GENRE);
+			counter[example[GENRE]]++;
 			
 			//Avaliacao
 			counter = counters.get(STARS);
@@ -119,18 +126,20 @@ public class Tree {
 						exampleCounter++;
 				}
 				aux = (double) exampleCounter / (double) total;
-				accField += -(aux) * Math.log(aux);
-				if(attr == AGE)
-					System.out.println("nStars: "+nStars+"   aux = "+aux+"   accField = "+accField+"   exampleCounter: "+exampleCounter+"   total: "+total);
+				if(aux == 0)
+					accField += 0;
+				else
+					accField += -(aux) * Math.log(aux);
+				//if(attr == GENRE)
+					//System.out.println("nStars: "+nStars+"   aux = "+aux+"   accField = "+accField+"   exampleCounter: "+exampleCounter+"   total: "+total);
 				
 			}
 			
 			acc += (double) counter[attrField]/(double) examples.size() * accField;
-			//if(attr == OCCUPATION){
-			//	System.out.println("counter[occ] = "+counter[attrField]+ "  example size: "+ examples.size()+ "   accField: "+accField);
-			//}
+			//if(attr == GENRE)
+				//System.out.println("counter[genre] = "+counter[attrField]+ "  example size: "+ examples.size()+ "   accField: "+accField);
 		}
-		//if(attr == OCCUPATION)
+		//if(attr == GENRE)
 			//System.out.println("acc = "+acc);
 		return acc;
 		
