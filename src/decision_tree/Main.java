@@ -30,6 +30,7 @@ public class Main {
 		int ratingNum = readData(movies, users, moviesID, genres);
 		ArrayList<int[]>examples = generateExampleSet(movies,users, moviesID, genres);
 		//int[] target = generateTargetSet(movies, moviesID);		
+		
 		Tree decTree = new Tree(examples,genres);
 		decTree.build();
 		int a = 2;
@@ -159,15 +160,15 @@ public class Main {
 				userRate = auxRate.getRate();
 				auxUser = users.get(uid);
 				int[] example = new int[N_ATTR];
-				example[GENDER] = auxUser.getGender();
+				example[GENDER] = auxUser.getGender()-1;
 				example[OCCUPATION] = auxUser.getOccupation();
 				//Para que o vetor torne-se continuo, divide-se por 8 as idades
 				int aux = auxUser.getAge()/8;
-				if(aux == 0)
-					aux = 1;
+				if(aux != 0)
+					aux = aux - 1;
 				example[AGE] = aux;
 				example[GENRE] = genres.get(auxMovie.getGenre());
-				example[STARS] = userRate;
+				example[STARS] = userRate-1;
 				examples.add(example);
 			}
 		}

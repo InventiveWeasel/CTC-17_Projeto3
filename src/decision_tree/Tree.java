@@ -1,6 +1,7 @@
 package decision_tree;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class Tree {
@@ -16,14 +17,14 @@ public class Tree {
 	final static int TARGET = 5;
 	
 	//Quantidades de selecoes diferentes para cada tipo de atributo dentro dos contadores
-	final static int GENDER_END = 2;
-	final static int GENDER_INI = 1;
-	final static int AGE_END = 7;
-	final static int AGE_INI = 1;
+	final static int GENDER_END = 1;
+	final static int GENDER_INI = 0;
+	final static int AGE_END = 6;
+	final static int AGE_INI = 0;
 	final static int OCCUPATION_END = 20;
 	final static int OCCUPATION_INI = 0;
-	final static int STARS_END = 5;
-	final static int STARS_INI = 1;
+	final static int STARS_END = 4;
+	final static int STARS_INI = 0;
 	final static int TARGET_END = 5;
 	final static int TARGET_INI = 1;
 	
@@ -32,6 +33,10 @@ public class Tree {
 	private ArrayList<int[]> counters;
 	private int[] iniIndex, endIndex, target;
 	private HashMap<String, Integer> genres;
+	private boolean[] attrMark;
+	private double[] bestAttr;
+	ArrayList<ArrayList<Integer>> attributes;
+	Node root;
 	
 	public Tree(ArrayList<int[]> examples, HashMap<String, Integer> genres){
 		this.examples = examples;
@@ -39,11 +44,38 @@ public class Tree {
 		iniIndex = new int[] {GENDER_INI, AGE_INI, OCCUPATION_INI, 0 , STARS_INI, TARGET_INI};
 		endIndex = new int[] {GENDER_END, AGE_END, OCCUPATION_END, genres.size()-1 ,STARS_END, TARGET_END};
 		this.genres = genres;
+		
+		attributes = new ArrayList<ArrayList<Integer>>();
+		ArrayList<Integer> aux;
+		for(int attr = GENDER; attr <= GENRE; attr++){
+			aux = new ArrayList<Integer>();
+			for(int j = iniIndex[attr]; j <= endIndex[attr]; j++){
+				aux.add(j);
+			}
+			attributes.add(aux);
+		}
+		
+		attrMark = new boolean[N_ATTR-1];
+		for(int i = 0; i < attrMark.length; i++){
+			attrMark[i] = false;
+		}
+		bestAttr = generateBestAttrArray();
+		
 	}
 	
-	public void build(){
-		
+	public void build(/* Node rootNode, ArrayList<int[]> examplesSplit, ArrayList<ArrayList<Integer>> attributes */){
 		int best = chooseBestAttr();
+		int standard =  getMaxTargetValue();
+		boolean[] mark = new boolean[N_ATTR-1];
+		double[] bestAtt = new double[N_ATTR-1];
+		System.arraycopy( attrMark, 0, mark, 0, attrMark.length );
+		System.arraycopy( bestAttr, 0, bestAtt, 0, bestAttr.length );
+		root = new Node(mark, bestAtt);
+		root.setAttr(best);
+		//attributes.remove(best);
+		root.build(examples, attributes, standard);
+		//node.split(examplesSplit);
+		int a = 1;
 	}
 	
 	private ArrayList<int[]> accountExamples(){
@@ -88,9 +120,10 @@ public class Tree {
 		return counters;
 	}
 	
-	private int chooseBestAttr(){
+	private double[] generateBestAttrArray(){
 		int[] counter;
-		double [] gain = new double[N_ATTR];
+		//Desconsiderar STARS, pois eh o alvo
+		double [] gain = new double[N_ATTR-1];
 		double targetEntropy = entropy(STARS, counters.get(STARS));
 		for(int attr = 0; attr < N_ATTR; attr++){
 			if(attr != STARS){
@@ -98,7 +131,7 @@ public class Tree {
 				gain[attr] = targetEntropy - entropyWithTarget(attr, counter);
 			}
 		}
-		return 0;
+		return gain;
 	}
 	
 	private double entropy(int attr, int[] counter){
@@ -118,7 +151,7 @@ public class Tree {
 		for(int attrField = iniIndex[attr]; attrField <= endIndex[attr]; attrField++){
 			double accField = 0;
 			total = counter[attrField];
-			for(int nStars = iniIndex[target]; nStars <= endIndex[target]; nStars++){
+			for(int nStars = 0; nStars <= 4; nStars++){
 				int exampleCounter = 0;
 				for(int k = 0; k < examples.size(); k++){
 					int[] example = examples.get(k);
@@ -130,18 +163,45 @@ public class Tree {
 					accField += 0;
 				else
 					accField += -(aux) * Math.log(aux);
-				//if(attr == GENRE)
+				//if(attr == GENDER)
 					//System.out.println("nStars: "+nStars+"   aux = "+aux+"   accField = "+accField+"   exampleCounter: "+exampleCounter+"   total: "+total);
 				
 			}
 			
 			acc += (double) counter[attrField]/(double) examples.size() * accField;
-			//if(attr == GENRE)
+			//if(attr == GENDER)
 				//System.out.println("counter[genre] = "+counter[attrField]+ "  example size: "+ examples.size()+ "   accField: "+accField);
 		}
-		//if(attr == GENRE)
+		//if(attr == GENDER)
 			//System.out.println("acc = "+acc);
 		return acc;
 		
+	}
+	
+	private int chooseBestAttr(){
+		double bestGain = 0;
+		int bestA = 0;
+		for(int attr = GENDER; attr <= GENRE; attr++){
+			if(bestAttr[attr] > bestGain && !attrMark[attr]){
+				bestA = attr;
+				bestGain = bestAttr[attr];
+			}
+				
+		}
+		attrMark[bestA] = true;
+		return bestA;
+	}
+	
+	private int getMaxTargetValue(){
+		int[] counter = counters.get(STARS);
+		int max = 0;
+		int maxIndex = -1;
+		for(int i = 0; i < 5; i++){
+			if(counter[i] > max){
+				max = counter[i];
+				maxIndex = i;
+			}
+		}
+		return maxIndex;
 	}
 }
