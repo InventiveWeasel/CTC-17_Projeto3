@@ -2,6 +2,7 @@ package decision_tree;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 
 public class Tree {
@@ -32,11 +33,22 @@ public class Tree {
 	private ArrayList<int[]>examples;
 	private ArrayList<int[]> counters;
 	private int[] iniIndex, endIndex, target;
+	//Associa a string do genero ao seu id
 	private HashMap<String, Integer> genres;
+	//Marcam os atributos que ja foram utilizados na classificacao
 	private boolean[] attrMark;
 	private double[] bestAttr;
-	ArrayList<ArrayList<Integer>> attributes;
-	Node root;
+	private ArrayList<ArrayList<Integer>> attributes;
+	private Node root;
+	
+	ArrayList<int[]> trainSet, testSet;
+	final static double TRAIN_PERC = 0.7;
+	
+	private int[][] conf;
+	private double squareError;
+	private double accuracy;
+	
+	ArrayList<int[]> personalSet;
 	
 	public Tree(ArrayList<int[]> examples, HashMap<String, Integer> genres){
 		this.examples = examples;
@@ -61,6 +73,42 @@ public class Tree {
 		}
 		bestAttr = generateBestAttrArray();
 		
+		//Separando os conjuntos de treino e teste
+		Collections.shuffle(examples);
+		trainSet = new ArrayList<int[]>();
+		testSet = new ArrayList<int[]>();
+		int nTrain = (int) Math.round(examples.size() * TRAIN_PERC);
+		for(int i = 0; i < nTrain; i++){
+			trainSet.add(examples.get(i));
+		}
+		for(int i = nTrain; i < examples.size(); i++){
+			testSet.add(examples.get(i));
+		}
+		
+		
+		personalSet = new ArrayList<int[]>();
+		//filmes a serem adicionados
+		//Independence day
+		personalSet.add(new int[]{0, 1, 17, genres.get("Action|Sci-Fi|War"),3}); // 780
+		// Ghost in the shell
+		personalSet.add(new int[]{0, 1, 17, genres.get("Animation|Sci-Fi"),4});	//741
+		//Oliver e companhia
+		personalSet.add(new int[]{0, 1, 17, genres.get("Animation|Children's"),3}); // 709
+		//Missao impossivel
+		personalSet.add(new int[]{0, 1, 17, genres.get("Action|Adventure|Mystery"),4}); //648
+		//O silencio dos inocentes
+		personalSet.add(new int[]{0, 1, 17, genres.get("Drama|Thriller"),4});  //593
+		//Exterminador do futuro 2
+		personalSet.add(new int[]{0, 1, 17, genres.get("Action|Sci-Fi|Thriller"),4}); //589
+		//Blade Runner
+		personalSet.add(new int[]{0, 1, 17, genres.get("Film-Noir|Sci-Fi"),4});  //541
+		//Jurassic Park
+		personalSet.add(new int[]{0, 1, 17, genres.get("Action|Adventure|Sci-Fi"),4});  //480
+		//Free Willy
+		personalSet.add(new int[]{0, 1, 17, genres.get("Adventure|Children's|Drama"),2}); //455
+		//Mortal Kombat
+		personalSet.add(new int[]{0, 1, 17, genres.get("Action|Adventure"),1});
+		
 	}
 	
 	public void build(/* Node rootNode, ArrayList<int[]> examplesSplit, ArrayList<ArrayList<Integer>> attributes */){
@@ -73,9 +121,37 @@ public class Tree {
 		root = new Node(mark, bestAtt);
 		root.setAttr(best);
 		//attributes.remove(best);
-		root.build(examples, attributes, standard);
+		root.build(trainSet, attributes, standard);
 		//node.split(examplesSplit);
 		int a = 1;
+	}
+	
+	public int[][] evaluate(){
+		int[][] confusionMat = new int[5][5];
+		double sqrtErrAcc = 0;
+		int acc = 0;
+		int retVal;
+		for(int i = 0; i < testSet.size(); i++){
+			int[] example = testSet.get(i);
+			retVal = root.evaluate(example);
+			confusionMat[example[STARS]][retVal]++;
+			sqrtErrAcc += Math.pow(example[STARS] - retVal,2);
+		}
+		
+		//Aproveitar para calcular as metricas pedidas
+		this.squareError = sqrtErrAcc / (double) testSet.size();
+		this.conf = conf;
+		this.accuracy = 0;
+		for(int i = 0; i < 5; i++){
+			this.accuracy += confusionMat[i][i];
+		}
+		this.accuracy /= (double) testSet.size();
+		return confusionMat;
+	}
+	
+	public int[][] personalEvaluate(){
+		testSet = personalSet;
+		return evaluate();
 	}
 	
 	private ArrayList<int[]> accountExamples(){

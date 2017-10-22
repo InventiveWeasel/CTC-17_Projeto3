@@ -19,6 +19,10 @@ public class Main {
 	final static int STARS = 4;
 	final static int TARGET = 5;
 	
+	final static int ATTR_PRIORI = 2;
+	final static int MOVIE_ID = 0;
+	final static int RATING = 1;
+	
 	public static void main(String args[]){
 		HashMap<Integer, Movie> movies = new HashMap<Integer, Movie>();
 		HashMap<Integer, User> users = new HashMap<Integer, User>();
@@ -31,9 +35,43 @@ public class Main {
 		ArrayList<int[]>examples = generateExampleSet(movies,users, moviesID, genres);
 		//int[] target = generateTargetSet(movies, moviesID);		
 		
+		//Classificacao para arvore de decisao
 		Tree decTree = new Tree(examples,genres);
 		decTree.build();
+		System.out.println("noAttr: "+Node.noAttrCounter+"  noExam: "+Node.noExamCounter+"  sameClass: "+Node.sameClassCounter);
+		int[][] conf = decTree.evaluate();
+		double right = 0;
+		for(int i = 0; i < 5; i++){
+			right += conf[i][i];
+		}
+		right = right / ((double) examples.size() * 0.3);
+		System.out.println("Right tree: "+right);
+		conf = decTree.personalEvaluate();
 		int a = 2;
+		
+		//Classificacao para classificador a priori
+		aPrioriClassifier apriori = new aPrioriClassifier();
+		apriori.train(movies, moviesID);
+		conf = apriori.evaluate();
+		//Taxa de acerto
+		for(int i = 0; i < 5; i++){
+			right += conf[i][i];
+		}
+		right = right / (double) apriori.getTestSetSize();
+		System.out.println("Right apriori: "+right);
+		
+		//Imprime Matriz de confusão:
+		double[][] confDouble = new double[5][5];
+		for(int i = 0; i < 5; i++){
+			for(int j = 0; j < 5; j++){
+				confDouble[i][j] = (double)conf[i][j] / (double) apriori.getTestSetSize();
+			}
+		}
+		for(int i = 0; i < 5; i++){
+			System.out.printf(" %.2f %.2f %.2f %.2f %.2f\n", confDouble[i][0],confDouble[i][1],confDouble[i][2],confDouble[i][3],confDouble[i][4]);
+		}
+		conf = apriori.personalEvaluate();
+		
 	}
 
 	private static int readData(HashMap<Integer, Movie> movies, 
@@ -174,6 +212,7 @@ public class Main {
 		}
 		return examples;
 	}
+	
 	
 	//Contabiliza o numero de ocorrencia de filmes de 1 estrela, 2, ... , 5 estrelas
 	private static int[] generateTargetSet(HashMap<Integer, Movie> movies,

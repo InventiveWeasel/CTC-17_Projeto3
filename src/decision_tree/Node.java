@@ -11,6 +11,8 @@ public class Node {
 	final static int GENRE = 3;
 	final static int STARS = 4;
 	
+	public static int noAttrCounter = 0, noExamCounter = 0, sameClassCounter = 0;
+	
 	private int nodeAttr;
 	private ArrayList<Node> children; 
 	private int value;
@@ -19,6 +21,8 @@ public class Node {
 	private boolean[] attrMark;
 	private double[] bestAttr;
 	private int[] starCounter;
+	private boolean isTerminal = false;
+	private int returnValue;
 	
 	public Node(boolean[] attrMark, double[] bestAttr){
 		children = new ArrayList<Node>();
@@ -44,12 +48,19 @@ public class Node {
 		this.value = value;
 	}
 	
+	public int getValue(){
+		return value;
+	}
+	
 	public int build(ArrayList<int[]> examples, ArrayList<ArrayList<Integer>> attributes, int standardValue){
 		this.examples = examples;
 		this.attributes = attributes;
 		//Retorna valor padrao (de cima)
 		if(examples.size() == 0){
 			System.out.println("Conjunto vazio de exemplos");
+			isTerminal = true;
+			noExamCounter++;
+			returnValue = standardValue;
 			return standardValue;
 		}
 			
@@ -57,12 +68,18 @@ public class Node {
 		int classification = hasSameClassification();
 		if(classification != -1){
 			System.out.println("Conjunto com mesma classificacao");
+			isTerminal = true;
+			sameClassCounter++;
+			returnValue = classification;
 			return classification;
 		}
 		//Na falta de atributos
 		if(!hasAttr()){
 			System.out.println("Sem atributos");
-			return getMaxTargetValue(starCounter);
+			isTerminal = true;
+			noAttrCounter++;
+			returnValue = getMaxTargetValue(starCounter);
+			return returnValue;
 		}
 			
 		this.examples = examples;
@@ -96,6 +113,25 @@ public class Node {
 		}
 		return 10;
 	}
+	
+	public int evaluate(int[] example){
+		int ret = -10;
+		if(isTerminal){
+			return returnValue;
+		}
+		int exampleVal = example[nodeAttr];
+		for(int i = 0; i < children.size(); i++){
+			Node child = children.get(i);
+			if(child.getValue() == exampleVal){
+				ret = child.evaluate(example);
+				break;
+			}
+		}
+		return ret;
+		
+	}
+	
+	
 	
 	private int chooseBestAttr(){
 		double bestGain = 0;
