@@ -40,26 +40,21 @@ public class Main {
 		decTree.build();
 		System.out.println("noAttr: "+Node.noAttrCounter+"  noExam: "+Node.noExamCounter+"  sameClass: "+Node.sameClassCounter);
 		int[][] conf = decTree.evaluate();
-		double right = 0;
-		for(int i = 0; i < 5; i++){
-			right += conf[i][i];
-		}
-		right = right / ((double) examples.size() * 0.3);
-		System.out.println("Right tree: "+right);
+		System.out.println("Arvore de decisao com base de dados");
+		decTree.printAnalytics();
+		
+		System.out.println("Arvore de decisao com base personalizada");
 		conf = decTree.personalEvaluate();
-		int a = 2;
+		decTree.printAnalytics();
 		
 		//Classificacao para classificador a priori
 		aPrioriClassifier apriori = new aPrioriClassifier();
 		apriori.train(movies, moviesID);
 		conf = apriori.evaluate();
-		//Taxa de acerto
-		for(int i = 0; i < 5; i++){
-			right += conf[i][i];
-		}
-		right = right / (double) apriori.getTestSetSize();
-		System.out.println("Right apriori: "+right);
+		System.out.println("Classificador a priori com base de dados");
+		apriori.printAnalytics();
 		
+		/*
 		//Imprime Matriz de confusão:
 		double[][] confDouble = new double[5][5];
 		for(int i = 0; i < 5; i++){
@@ -70,8 +65,10 @@ public class Main {
 		for(int i = 0; i < 5; i++){
 			System.out.printf(" %.2f %.2f %.2f %.2f %.2f\n", confDouble[i][0],confDouble[i][1],confDouble[i][2],confDouble[i][3],confDouble[i][4]);
 		}
+		*/
 		conf = apriori.personalEvaluate();
-		
+		System.out.println("Classificador a priori com base personalizada");
+		apriori.printAnalytics();
 	}
 
 	private static int readData(HashMap<Integer, Movie> movies, 

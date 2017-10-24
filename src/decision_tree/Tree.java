@@ -42,11 +42,12 @@ public class Tree {
 	private Node root;
 	
 	ArrayList<int[]> trainSet, testSet;
-	final static double TRAIN_PERC = 0.7;
+	final static double TRAIN_PERC = 0.85;
 	
 	private int[][] conf;
 	private double squareError;
 	private double accuracy;
+	private double kappa;
 	
 	ArrayList<int[]> personalSet;
 	
@@ -111,7 +112,7 @@ public class Tree {
 		
 	}
 	
-	public void build(/* Node rootNode, ArrayList<int[]> examplesSplit, ArrayList<ArrayList<Integer>> attributes */){
+	public void build(){
 		int best = chooseBestAttr();
 		int standard =  getMaxTargetValue();
 		boolean[] mark = new boolean[N_ATTR-1];
@@ -120,9 +121,7 @@ public class Tree {
 		System.arraycopy( bestAttr, 0, bestAtt, 0, bestAttr.length );
 		root = new Node(mark, bestAtt);
 		root.setAttr(best);
-		//attributes.remove(best);
 		root.build(trainSet, attributes, standard);
-		//node.split(examplesSplit);
 		int a = 1;
 	}
 	
@@ -146,6 +145,35 @@ public class Tree {
 			this.accuracy += confusionMat[i][i];
 		}
 		this.accuracy /= (double) testSet.size();
+		
+		//Calculo de kappa
+		double[] distVec = new double[5];
+		double[] totalVec = new double[5];
+		double total = 0;
+		for(int i = 0; i < 5; i++){
+			for(int j = 0; j < 5; j++){
+				distVec[i] += confusionMat[i][j];
+			}
+			total+=distVec[i];
+			totalVec[i] = distVec[i];
+		}
+		//obtem-se a distribuicao esperada
+		for(int i = 0; i < 5; i++){
+			distVec[i] /= total;
+		}
+		//montando a diagonal principal esperado
+		double[] expecDiag = new double[5];
+		for(int i = 0; i < 5; i++){
+			expecDiag[i] = distVec[i] * totalVec[i];
+		}
+		double po = 0, pe = 0;
+		for(int i = 0; i < 5; i++){
+			po += confusionMat[i][i];
+			pe += expecDiag[i];
+		}
+		po /= total;
+		pe /= total;
+		this.kappa = (po-pe)/(1-pe);
 		return confusionMat;
 	}
 	
@@ -187,12 +215,7 @@ public class Tree {
 			//Avaliacao
 			counter = counters.get(STARS);
 			counter[example[STARS]]++;
-			
-			//Target
-			//counter = counters.get(TARGET);
-			//counter[example[TARGET]]++;
 		}
-		//counters.add(target);
 		return counters;
 	}
 	
@@ -239,17 +262,10 @@ public class Tree {
 					accField += 0;
 				else
 					accField += -(aux) * Math.log(aux);
-				//if(attr == GENDER)
-					//System.out.println("nStars: "+nStars+"   aux = "+aux+"   accField = "+accField+"   exampleCounter: "+exampleCounter+"   total: "+total);
-				
 			}
 			
 			acc += (double) counter[attrField]/(double) examples.size() * accField;
-			//if(attr == GENDER)
-				//System.out.println("counter[genre] = "+counter[attrField]+ "  example size: "+ examples.size()+ "   accField: "+accField);
 		}
-		//if(attr == GENDER)
-			//System.out.println("acc = "+acc);
 		return acc;
 		
 	}
@@ -279,5 +295,11 @@ public class Tree {
 			}
 		}
 		return maxIndex;
+	}
+	
+	public void printAnalytics(){
+		System.out.println("Accuracy: "+accuracy);
+		System.out.println("SqrtErr: "+squareError);
+		System.out.println("kappa: "+kappa);
 	}
 }

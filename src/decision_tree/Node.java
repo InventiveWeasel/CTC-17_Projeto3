@@ -57,7 +57,6 @@ public class Node {
 		this.attributes = attributes;
 		//Retorna valor padrao (de cima)
 		if(examples.size() == 0){
-			System.out.println("Conjunto vazio de exemplos");
 			isTerminal = true;
 			noExamCounter++;
 			returnValue = standardValue;
@@ -67,7 +66,6 @@ public class Node {
 		//Retorna valor da classificacao
 		int classification = hasSameClassification();
 		if(classification != -1){
-			System.out.println("Conjunto com mesma classificacao");
 			isTerminal = true;
 			sameClassCounter++;
 			returnValue = classification;
@@ -75,7 +73,6 @@ public class Node {
 		}
 		//Na falta de atributos
 		if(!hasAttr()){
-			System.out.println("Sem atributos");
 			isTerminal = true;
 			noAttrCounter++;
 			returnValue = getMaxTargetValue(starCounter);
@@ -97,7 +94,6 @@ public class Node {
 		}
 		
 		int best = chooseBestAttr();
-		//attributes.remove(best);
 		for(int i = 0; i < attributes.get(nodeAttr).size(); i++){
 			boolean[] mark = new boolean[N_ATTR-1];
 			double[] bestAtt = new double[N_ATTR-1];

@@ -12,10 +12,11 @@ public class aPrioriClassifier {
 	
 	private HashMap<Integer, Integer> trainSet;
 	private ArrayList<int[]> testSet, personalSet;
-	final static double TRAIN_PERC = 0.7;
+	final static double TRAIN_PERC = 0.85;
 	private int[][] conf;
 	private double squareError;
 	private double accuracy;
+	private double kappa;
 	
 	
 	public aPrioriClassifier(){
@@ -130,28 +131,62 @@ public class aPrioriClassifier {
 	}
 	
 	public int[][] evaluate(){
-		int[][] conf = new int[5][5];
+		int[][] confusionMat = new int[5][5];
 		double sqrtErrAcc = 0;
 		int acc = 0;
 		for(int i = 0; i < testSet.size(); i++){
 			int[] example = testSet.get(i);
 			int target = trainSet.get(example[MOVIE_ID]);
-			conf[target][example[RATING]]++;
+			confusionMat[target][example[RATING]]++;
 			sqrtErrAcc += Math.pow(example[RATING] - target,2);
 		}
 		this.squareError = sqrtErrAcc / (double) testSet.size();
-		this.conf = conf;
+		this.conf = confusionMat;
 		this.accuracy = 0;
 		for(int i = 0; i < 5; i++){
 			this.accuracy += conf[i][i];
 		}
 		this.accuracy /= (double) testSet.size();
+		//Calculo de kappa
+				double[] distVec = new double[5];
+				double[] totalVec = new double[5];
+				double total = 0;
+				for(int i = 0; i < 5; i++){
+					for(int j = 0; j < 5; j++){
+						distVec[i] += confusionMat[i][j];
+					}
+					total+=distVec[i];
+					totalVec[i] = distVec[i];
+				}
+				//obtem-se a distribuicao esperada
+				for(int i = 0; i < 5; i++){
+					distVec[i] /= total;
+				}
+				//montando a diagonal principal esperado
+				double[] expecDiag = new double[5];
+				for(int i = 0; i < 5; i++){
+					expecDiag[i] = distVec[i] * totalVec[i];
+				}
+				double po = 0, pe = 0;
+				for(int i = 0; i < 5; i++){
+					po += confusionMat[i][i];
+					pe += expecDiag[i];
+				}
+				po /= total;
+				pe /= total;
+				this.kappa = (po-pe)/(1-pe);
 		return conf;
 	}
 	
 	public int[][] personalEvaluate(){
 		testSet = personalSet;
 		return evaluate();
+	}
+	
+	public void printAnalytics(){
+		System.out.println("Accuracy: "+accuracy);
+		System.out.println("SqrtErr: "+squareError);
+		System.out.println("kappa: "+kappa);
 	}
 	
 }
